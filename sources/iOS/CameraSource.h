@@ -91,10 +91,10 @@ namespace videocore { namespace iOS {
          *  Setup camera properties
          *
          *  \param fps      Optional parameter to set the output frames per second.
-         *  \param useFront Start with the front-facing camera
+         *  \param preferFront Prefer starting with the front-facing camera
          *  \param useInterfaceOrientation whether to use interface or device orientation as reference for video capture orientation
          */
-        void setupCamera(int fps = 15, bool useFront = true, bool useInterfaceOrientation = false);
+        void setupCamera(int fps = 15, bool preferFront = true, bool useInterfaceOrientation = false);
         /*!
          * Set the aspect mode. The default is kAspectFit. Deprecated. Use the AspectTransform instead.
          *
@@ -102,11 +102,25 @@ namespace videocore { namespace iOS {
          *
          */
         void setAspectMode( AspectMode aspectMode ) __attribute__ ((deprecated));
+
+        /*!
+         *  Determine if multiple cameras are supported.
+         *
+         *  \return true if multiple cameras are supported, otherwise false.
+         */
+        bool hasMultipleCameras();
         
         /*!
          *  Toggle the camera between front and back-facing cameras.
          */
         void toggleCamera();
+
+        /*!
+         *  Determine if the current camera source supports a torch.
+         *
+         *  \return whether the camera source supports a torch.
+         */
+        bool supportsTorch();
         
         /*!
          *  Attempt to turn the torch mode on or off.
@@ -168,7 +182,6 @@ namespace videocore { namespace iOS {
         bool m_usingDeprecatedMethods;
         bool m_torchOn;
         bool m_useInterfaceOrientation;
-
     };
     
 }

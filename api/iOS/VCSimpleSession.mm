@@ -130,6 +130,7 @@ namespace videocore { namespace simpleApi {
     
 }
 @property (nonatomic, readwrite) VCSessionState rtmpSessionState;
+@property (nonatomic, retain) NSMutableSet *usableCameraDevicePositions;
 
 - (void) setupGraph;
 
@@ -320,6 +321,14 @@ namespace videocore { namespace simpleApi {
     return _exposurePOI;
 }
 
+- (BOOL) supportsTorch {
+    return ((m_cameraSource) && (m_cameraSource->supportsTorch()));
+}
+
+- (BOOL) hasMultipleCameras {
+    return ((m_cameraSource) && (m_cameraSource->hasMultipleCameras()));
+}
+
 // -----------------------------------------------------------------------------
 //  Public Methods
 // -----------------------------------------------------------------------------
@@ -377,13 +386,26 @@ namespace videocore { namespace simpleApi {
     
     _graphManagementQueue = dispatch_queue_create("com.videocore.session.graph", 0);
 
+
+    _usableCameraDevicePositions = [NSMutableSet setWithCapacity:2];
+    NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+    for (AVCaptureDevice *device in devices)
+    {
+        AVCaptureDevicePositon position = [device position];
+
+        if (position == AVCaptureDevicePositionUnspecified)
+            continue;
+
+        [_usableCameraDevicePositions addObject:position];
+    }
+
+    _hasMultipleCameras = [_usableCameraDevicePositions count] > 1;
+
     __block VCSimpleSession* bSelf = self;
-    
+
     dispatch_async(_graphManagementQueue, ^{
         [bSelf setupGraph];
     });
-    
-
 }
 
 - (void) dealloc
@@ -400,6 +422,9 @@ namespace videocore { namespace simpleApi {
 
     [_previewView release];
     _previewView = nil;
+
+    [_usableCameraDevicePositions release];
+    _usableCameraDevicePositions = nil;
 
     dispatch_release(_graphManagementQueue);
     

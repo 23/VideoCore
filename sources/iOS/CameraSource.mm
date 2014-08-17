@@ -118,9 +118,9 @@ namespace videocore { namespace iOS {
             [(id)m_previewLayer release];
         }
     }
-    
+
     void
-    CameraSource::setupCamera(int fps, bool useFront, bool useInterfaceOrientation)
+    CameraSource::setupCamera(int fps, bool preferFront, bool useInterfaceOrientation)
     {
         m_fps = fps;
         m_useInterfaceOrientation = useInterfaceOrientation;
@@ -133,25 +133,36 @@ namespace videocore { namespace iOS {
             void (^permissions)(BOOL) = ^(BOOL granted) {
                 if(granted) {
 
-                    int position = useFront ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
-                    
-                    NSArray* devices = [AVCaptureDevice devices];
-                    for(AVCaptureDevice* d in devices) {
-                        if([d hasMediaType:AVMediaTypeVideo] && [d position] == position)
-                        {
-                            bThis->m_captureDevice = d;
-                            NSError* error;
-                            [d lockForConfiguration:&error];
-                            [d setActiveVideoMinFrameDuration:CMTimeMake(1, fps)];
-                            [d setActiveVideoMaxFrameDuration:CMTimeMake(1, fps)];
-                            [d unlockForConfiguration];
-                        }
-                    }
-                    
+                    int position = preferFront ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
+
+                    // Determine the capture device to use.
+                    AVCaptureDevice *captureDevice =
+                        cameraWithPosition(preferFront ?
+                                           AVCaptureDevicePositionFront :
+                                           AVCaptureDevicePositionBack);
+
+                    if (!captureDevice)
+                        captureDevice = 
+                            cameraWithPosition(preferFront ?
+                                               AVCaptureDevicePositionBack :
+                                               AVCaptureDevicePositionFront);
+
+                    /**! To be implemented with proper exception **/
+                    //if (!captureDevice)
+                    //    ..
+
+                    // Configure the capture device.
+                    bThis->m_captureDevice = captureDevice;
+                    NSError* error;
+                    [captureDevice lockForConfiguration:&error];
+                    [captureDevice setActiveVideoMinFrameDuration:CMTimeMake(1, fps)];
+                    [captureDevice setActiveVideoMaxFrameDuration:CMTimeMake(1, fps)];
+                    [captureDevice unlockForConfiguration];
+
                     AVCaptureSession* session = [[AVCaptureSession alloc] init];
                     AVCaptureDeviceInput* input;
                     AVCaptureVideoDataOutput* output;
-                    
+
                     NSString* preset = AVCaptureSessionPresetHigh;
                     /**! TO BE REMOVED 0.2.0 **/
                     if(bThis->m_usingDeprecatedMethods) {
@@ -250,6 +261,16 @@ namespace videocore { namespace iOS {
         }
         return nil;
         
+    }
+    bool
+    CameraSource::supportsTorch()
+    {
+        if(!m_captureSession)
+            return false;
+
+        AVCaptureSession* session = (AVCaptureSession*)m_captureSession;
+        AVCaptureDeviceInput* currentCameraInput = [session.inputs objectAtIndex:0];
+        return currentCameraInput.device.torchAvailable;
     }
     bool
     CameraSource::setTorch(bool torchOn)

@@ -67,6 +67,8 @@ typedef NS_ENUM(NSInteger, VCCameraState)
 @property (nonatomic, assign, readonly) BOOL    useInterfaceOrientation;
 @property (nonatomic, assign) VCCameraState cameraState;
 @property (nonatomic, assign) BOOL          torch;
+@property (nonatomic, readonly) BOOL        supportsTorch;
+@property (nonatomic, assign, readonly) BOOL    hasMultipleCameras;
 @property (nonatomic, assign) float         videoZoomFactor;
 @property (nonatomic, assign) int           audioChannelCount;
 @property (nonatomic, assign) float         audioSampleRate;
@@ -95,5 +97,7 @@ typedef NS_ENUM(NSInteger, VCCameraState)
                     andStreamKey:(NSString*) streamKey;
 
 - (void) endRtmpSession;
+
+- (void) toggleCamera;
 
 @end
